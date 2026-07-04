@@ -21,9 +21,6 @@ ARXIV_CATEGORIES = [
     "cs.DC",    # distributed/parallel computing (latency, systems, serving)
     "cs.NI",    # networking (UDP, transport, protocols)
     "cs.DB",    # databases (knowledge graphs, retrieval)
-    "cs.RO",    # robotics
-    "cs.SE",    # software engineering / agents
-    "eess.SP",  # speech & audio
     "quant-ph", # quantum physics (quantum computing for/with AI)
 ]
 
@@ -36,31 +33,24 @@ ARXIV_MAX_PER_CATEGORY = 40
 # label, url, kind  ->  kind is used for the badge + source icon color.
 # kinds: "company", "news", "blog"
 RSS_FEEDS = [
-    # Big labs
-    ("Google DeepMind", "https://deepmind.google/blog/rss.xml", "company"),
-    ("Google AI", "https://blog.google/technology/ai/rss/", "company"),
-    ("OpenAI", "https://openai.com/news/rss.xml", "company"),
-    ("Anthropic", "https://www.anthropic.com/news/rss.xml", "company"),
-    ("Microsoft Research", "https://www.microsoft.com/en-us/research/feed/", "company"),
-    ("Meta AI", "https://ai.meta.com/blog/rss/", "company"),
-    ("NVIDIA Developer", "https://developer.nvidia.com/blog/feed", "company"),
-    ("AWS ML Blog", "https://aws.amazon.com/blogs/machine-learning/feed/", "company"),
-    ("Hugging Face", "https://huggingface.co/blog/feed.xml", "company"),
-    ("Databricks", "https://www.databricks.com/blog/rss.xml", "company"),
-    ("Together AI", "https://www.together.ai/blog/rss.xml", "company"),
-    ("Cerebras", "https://www.cerebras.ai/blog/feed", "company"),
-    ("Allen AI", "https://allenai.org/blog/rss.xml", "company"),
-    ("BAIR", "https://bair.berkeley.edu/blog/feed.xml", "company"),
+    # --- Big-lab / company research blogs ---
+    ("Google DeepMind",  "https://deepmind.google/blog/rss.xml",                 "company"),
+    ("Google AI",        "https://blog.google/technology/ai/rss/",               "company"),
+    ("OpenAI",           "https://openai.com/news/rss.xml",                      "company"),
+    ("Microsoft Research","https://www.microsoft.com/en-us/research/feed/",      "company"),
+    ("Meta AI",          "https://ai.meta.com/blog/rss/",                        "company"),
+    ("NVIDIA Developer", "https://developer.nvidia.com/blog/feed",               "company"),
+    ("AWS ML Blog",      "https://aws.amazon.com/blogs/machine-learning/feed/",  "company"),
 
-    # News
-    ("VentureBeat AI", "https://venturebeat.com/category/ai/feed/", "news"),
-    ("TechCrunch AI", "https://techcrunch.com/category/artificial-intelligence/feed/", "news"),
-    ("MIT Tech Review", "https://www.technologyreview.com/feed/", "news"),
-    ("Ars Technica", "https://feeds.arstechnica.com/arstechnica/technology-lab", "news"),
+    # --- News outlets ---
+    ("VentureBeat AI",   "https://venturebeat.com/category/ai/feed/",            "news"),
+    ("TechCrunch AI",    "https://techcrunch.com/category/artificial-intelligence/feed/", "news"),
+    ("MIT Tech Review",  "https://www.technologyreview.com/feed/",               "news"),
+    ("Ars Technica",     "https://feeds.arstechnica.com/arstechnica/technology-lab", "news"),
 
-    # Newsletters
-    ("The Batch", "https://www.deeplearning.ai/the-batch/feed/", "blog"),
-    ("MarkTechPost", "https://www.marktechpost.com/feed/", "blog"),
+    # --- Newsletters / curated ---
+    ("The Batch",        "https://www.deeplearning.ai/the-batch/feed/",          "blog"),
+    ("MarkTechPost",     "https://www.marktechpost.com/feed/",                   "blog"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -74,87 +64,123 @@ RSS_FEEDS = [
 # "color" is the accent hex used in the UI, "glyph" is a Tabler icon name.
 TOPIC_AREAS = [
     {
-        "id":"graphics","label":"Graphics & rendering","color":"#D85A30","glyph":"ti-cube",
-        "keywords":["nvidia","rendering","render","graphics","nerf","gaussian splat","ray tracing","shader","3d reconstruction","dlss","texture synthesis"]
+        "id": "graphics",
+        "label": "Graphics & rendering",
+        "color": "#D85A30",
+        "glyph": "ti-cube",
+        "keywords": ["nvidia", "rendering", "render", "graphics", "nerf",
+                     "gaussian splat", "ray tracing", "rasteriz", "shader",
+                     "neural radiance", "3d reconstruction", "nemesis", "vlss",
+                     "dlss", "texture synthesis", "novel view"],
     },
     {
-        "id":"quantum","label":"Quantum","color":"#7F77DD","glyph":"ti-atom",
-        "keywords":["quantum","qubit","qaoa","variational quantum","quantum machine learning","quantum circuit"]
+        "id": "quantum",
+        "label": "Quantum",
+        "color": "#7F77DD",
+        "glyph": "ti-atom",
+        "keywords": ["quantum", "qubit", "qaoa", "variational quantum",
+                     "quantum machine learning", "quantum circuit"],
     },
     {
-        "id":"hallucination","label":"Hallucination & reliability","color":"#D4537E","glyph":"ti-alert-triangle",
-        "keywords":["hallucinat","factual","faithfulness","truthful","calibration","uncertainty","reliability","grounding"]
+        "id": "hallucination",
+        "label": "Hallucination & reliability",
+        "color": "#D4537E",
+        "glyph": "ti-alert-triangle",
+        "keywords": ["hallucinat", "factual", "faithfulness", "truthful",
+                     "calibration", "uncertainty", "reliability", "grounding"],
     },
     {
-        "id":"cognition","label":"Cognition & reasoning","color":"#1D9E75","glyph":"ti-brain",
-        "keywords":["cognit","reasoning","chain-of-thought","planning","world model","metacognit","self-reflect","deliberat"]
+        "id": "cognition",
+        "label": "Cognition & reasoning",
+        "color": "#1D9E75",
+        "glyph": "ti-brain",
+        "keywords": ["cognit", "reasoning", "chain-of-thought", "chain of thought",
+                     "planning", "world model", "metacognit", "theory of mind",
+                     "self-reflect", "deliberat"],
     },
     {
-        "id":"knowledge_graphs","label":"Knowledge graphs & retrieval","color":"#185FA5","glyph":"ti-share",
-        "keywords":["knowledge graph","knowledge base","retrieval-augmented","rag ","graph neural","entity linking","ontology","semantic"]
+        "id": "knowledge_graphs",
+        "label": "Knowledge graphs & retrieval",
+        "color": "#185FA5",
+        "glyph": "ti-share",
+        "keywords": ["knowledge graph", "knowledge base", "retrieval-augmented",
+                     "rag ", "graph neural", "entity linking", "ontolog",
+                     "neptune", "cypher", "triple store", "semantic"],
     },
     {
-        "id":"systems","label":"Latency, serving & systems","color":"#854F0B","glyph":"ti-bolt",
-        "keywords":["latency","throughput","kv cache","speculative decod","quantiz","flashattention","serving","batching","udp","rdma","networking"]
+        "id": "systems",
+        "label": "Latency, serving & systems",
+        "color": "#854F0B",
+        "glyph": "ti-bolt",
+        "keywords": ["latency", "throughput", "inference serv", "kv cache",
+                     "kv-cache", "speculative decod", "quantiz", "distillation",
+                     "flashattention", "flash attention", "kernel", "serving",
+                     "batching", "udp", "rdma", "transport protocol", "networking"],
     },
     {
-        "id":"agentic","label":"Agentic AI","color":"#146C94","glyph":"ti-route",
-        "keywords":["agentic","workflow","planner","memory","reflection","tool orchestration","mcp","a2a","acp","multi-agent"]
+        "id": "agents",
+        "label": "Agents & tool use",
+        "color": "#0F6E56",
+        "glyph": "ti-robot",
+        "keywords": ["agent", "tool use", "tool-use", "function calling",
+                     "mcp", "model context protocol", "trajectory", "autonomous",
+                     "multi-agent", "orchestrat"],
     },
     {
-        "id":"evaluation","label":"Evaluation & Benchmarks","color":"#8E44AD","glyph":"ti-chart-bar",
-        "keywords":["benchmark","evaluation","eval","arena","reward model","judge","verification","leaderboard"]
+        "id": "multimodal",
+        "label": "Multimodal & vision",
+        "color": "#993C1D",
+        "glyph": "ti-eye",
+        "keywords": ["multimodal", "vision-language", "vision language", "vlm",
+                     "image generation", "video generation", "diffusion",
+                     "text-to-image", "text-to-video", "audio", "speech"],
     },
     {
-        "id":"infrastructure","label":"AI Infrastructure","color":"#B35C00","glyph":"ti-server",
-        "keywords":["gpu","cuda","h100","b200","tpu","compiler","runtime","vllm","tensorrt","inference engine"]
+        "id": "models",
+        "label": "New models & releases",
+        "color": "#0C447C",
+        "glyph": "ti-package",
+        "keywords": ["we release", "we introduce", "introducing", "open-source",
+                     "open source", "model release", "weights", "checkpoint",
+                     "outperforms", "state-of-the-art", "sota", "frontier model",
+                     "billion parameter", "b parameter"],
     },
     {
-        "id":"robotics","label":"Robotics","color":"#287233","glyph":"ti-armchair-2",
-        "keywords":["robotics","embodied","navigation","manipulation","policy learning"]
+        "id": "training",
+        "label": "Training & architecture",
+        "color": "#3B6D11",
+        "glyph": "ti-adjustments",
+        "keywords": ["pretrain", "fine-tun", "finetun", "rlhf", "reinforcement learning",
+                     "mixture-of-experts", "mixture of experts", "moe", "transformer",
+                     "attention", "scaling law", "optimizer", "loss function"],
     },
     {
-        "id":"security","label":"AI Safety & Security","color":"#B22222","glyph":"ti-shield-lock",
-        "keywords":["alignment","jailbreak","red team","red teaming","adversarial","safety"]
+        "id": "general",
+        "label": "General AI",
+        "color": "#5F5E5A",
+        "glyph": "ti-sparkles",
+        "keywords": [],  # catch-all
     },
-    {
-        "id":"healthcare","label":"Healthcare AI","color":"#00897B","glyph":"ti-heartbeat",
-        "keywords":["clinical","medical","drug discovery","oncology","patient","bioinformatics","healthcare"]
-    },
-    {
-        "id":"multimodal","label":"Multimodal & vision","color":"#993C1D","glyph":"ti-eye",
-        "keywords":["multimodal","vision-language","vlm","image generation","video generation","diffusion","speech","audio"]
-    },
-    {
-        "id":"models","label":"New models & releases","color":"#0C447C","glyph":"ti-package",
-        "keywords":["introducing","release","weights","checkpoint","state-of-the-art","frontier model","billion parameter"]
-    },
-    {
-        "id":"training","label":"Training & architecture","color":"#3B6D11","glyph":"ti-adjustments",
-        "keywords":["pretrain","fine-tun","rlhf","reinforcement learning","mixture-of-experts","moe","transformer","attention","optimizer"]
-    },
-    {
-        "id":"general","label":"General AI","color":"#5F5E5A","glyph":"ti-sparkles","keywords":[]
-    }
 ]
+
 # ---------------------------------------------------------------------------
 # 4. Sensational / "big news" detection
 # ---------------------------------------------------------------------------
 # Items whose title hits these get a "Hot" flag and are eligible for the hero
 # slot. Tuned toward big releases and dramatic claims.
 HOT_SIGNALS = [
-    "breakthrough","first ever","world's first","record","fastest","launches",
-    "launch","releases","unveils","announces","introducing","outperforms",
-    "beats gpt","state-of-the-art","sota","open-sources","billion","raises",
-    "acquires","shuts down","banned","agent","reasoning","thinking","mcp"
+    "breakthrough", "first ever", "world's first", "record", "fastest",
+    "launches", "launch", "releases", "unveils", "announces", "introducing",
+    "outperforms", "beats gpt", "state-of-the-art", "sota", "open-sources",
+    "billion", "raises", "acquires", "shuts down", "banned",
 ]
 
+# Companies worth flagging by name (adds a small company chip).
 WATCHED_ORGS = [
-    "openai","google","deepmind","anthropic","meta","microsoft","nvidia",
-    "mistral","cohere","stability","hugging face","xai","alibaba","deepseek",
-    "qwen","tencent","databricks","together ai","cerebras","allen ai"
+    "openai", "google", "deepmind", "anthropic", "meta", "microsoft",
+    "nvidia", "mistral", "cohere", "stability", "hugging face", "xai",
+    "alibaba", "deepseek", "qwen", "tencent",
 ]
-
 
 # ---------------------------------------------------------------------------
 # 5. General settings
