@@ -1,0 +1,7 @@
+# build outputs are regenerated each run; only digest.db is committed
+site/index.html
+site/data.json
+site/api/
+__pycache__/
+*.pyc
+.DS_Store

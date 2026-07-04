@@ -1,0 +1,63 @@
+name: Refresh AI digest
+
+on:
+  schedule:
+    # 06:00 and 18:00 UTC daily (twice a day). Adjust as you like.
+    - cron: "0 6,18 * * *"
+  workflow_dispatch:        # lets you trigger a run manually from the Actions tab
+  push:
+    branches: [main]        # rebuild on code changes too
+
+permissions:
+  contents: write           # needed to commit the updated digest.db back
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full, so digest.db history persists)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch sources into the archive
+        run: python scripts/fetch.py
+
+      - name: Build the site from the archive
+        run: python scripts/build.py
+
+      - name: Commit updated archive
+        run: |
+          git config user.name  "ai-digest-bot"
+          git config user.email "actions@github.com"
+          git add digest.db scripts/.cache/yt_channel_id.txt 2>/dev/null || true
+          git commit -m "Refresh archive $(date -u +%Y-%m-%dT%H:%MZ)" || echo "No changes to commit"
+          git push || echo "Nothing to push"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: refresh
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
