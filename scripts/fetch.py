@@ -17,6 +17,9 @@ from pathlib import Path
 
 import requests
 import feedparser
+import trafilatura
+
+from bs4 import BeautifulSoup
 
 import sources as cfg
 from summarize import summarize
@@ -73,6 +76,80 @@ def extract_image(entry):
     if m:
         return m.group(1)
     return None
+
+
+def scrape_latest_articles(site_url, source, kind):
+    """
+    Generic website scraper used when RSS fails.
+    """
+    articles = []
+
+    try:
+        r = requests.get(site_url, headers=HEADERS, timeout=30)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        urls = []
+
+        for a in soup.find_all("a", href=True):
+            href = urllib.parse.urljoin(site_url, a["href"])
+
+            if href.startswith(site_url):
+
+                if any(x in href.lower() for x in [
+                    "/blog",
+                    "/news",
+                    "/research",
+                    "/article",
+                    "/post",
+                ]):
+                    urls.append(href)
+
+        urls = list(dict.fromkeys(urls))
+
+        for url in urls[:20]:
+
+            downloaded = trafilatura.fetch_url(url)
+
+            if not downloaded:
+                continue
+
+            result = trafilatura.extract(
+                downloaded,
+                output_format="json",
+                with_metadata=True,
+            )
+
+            if not result:
+                continue
+
+            data = json.loads(result)
+
+            published = NOW
+
+            if data.get("date"):
+                try:
+                    published = datetime.fromisoformat(
+                        data["date"].replace("Z", "+00:00")
+                    )
+                except Exception:
+                    pass
+
+            item = make_item(
+                data.get("title", ""),
+                data.get("text", ""),
+                url,
+                source,
+                kind,
+                published,
+            )
+
+            if item:
+                articles.append(item)
+
+    except Exception as ex:
+        REPORT["failed"].append(f"{source} Scraper: {ex}")
+
+    return articles
 
 
 def assign_area(title, summary):
@@ -162,15 +239,34 @@ def fetch_arxiv():
 
 def fetch_rss():
     items = []
-    for label, url, kind in cfg.RSS_FEEDS:
+    for source in cfg.RSS_FEEDS:
+        label = source["label"]
+        url = source["rss"]
+        site_url = source["site"]
+        kind = source["kind"]
         try:
             r = requests.get(url, headers=HEADERS, timeout=30)
             if r.status_code != 200:
-                REPORT["failed"].append(f"{label}: HTTP {r.status_code}")
+                print(f"RSS failed for {label}. Using scraper.")
+
+                items.extend(
+                    scrape_latest_articles(
+                        site_url,
+                        label,
+                        kind,
+                    )
+                )
                 continue
             feed = feedparser.parse(r.content)
             if not feed.entries:
-                REPORT["empty"].append(label)
+                print(f"No RSS entries for {label}. Using scraper.")
+                items.extend(
+                    scrape_latest_articles(
+                        site_url,
+                        label,
+                        kind,
+                    )
+                )
                 continue
             n = 0
             for e in feed.entries[:30]:
@@ -178,16 +274,28 @@ def fetch_rss():
                 if pub and pub < CUTOFF:
                     continue
                 it = make_item(
-                    e.get("title", ""), e.get("summary", ""),
-                    e.get("link", ""), label, kind, pub,
+                    e.get("title", ""),
+                    e.get("summary", ""),
+                    e.get("link", ""),
+                    label,
+                    kind,
+                    pub,
                     image=extract_image(e),
                 )
                 if it:
                     items.append(it)
                     n += 1
             REPORT["ok"].append(f"{label} ({n})")
+
         except Exception as ex:
-            REPORT["failed"].append(f"{label}: {ex}")
+            print(f"{label} RSS Exception. Falling back to scraper.")
+            items.extend(
+                scrape_latest_articles(
+                    site_url,
+                    label,
+                    kind,
+                )
+            )
     return items
 
 
@@ -199,8 +307,15 @@ def fetch_reddit():
         if r.status_code != 200:
             REPORT["failed"].append(f"r/singularity: HTTP {r.status_code}")
             return items
+        
         feed = feedparser.parse(r.content)
-        for e in feed.entries[:20]:
+        entries = sorted(
+            feed.entries,
+            key=lambda x: parse_date(x) or NOW,
+            reverse=True,
+        )
+
+        for e in entries[:30]:
             pub = parse_date(e)
             if pub and pub < CUTOFF:
                 continue
