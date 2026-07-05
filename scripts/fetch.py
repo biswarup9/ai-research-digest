@@ -152,16 +152,6 @@ def scrape_latest_articles(site_url, source, kind):
     return articles
 
 
-def assign_area(title, summary):
-    """First matching TOPIC_AREA wins; unmatched falls to the catch-all."""
-    hay = (title + " " + summary).lower()
-    for area in cfg.TOPIC_AREAS:
-        for kw in area["keywords"]:
-            if kw in hay:
-                return area
-    return cfg.TOPIC_AREAS[-1]  # general
-
-
 def detect_hot(title):
     t = title.lower()
     return any(sig in t for sig in cfg.HOT_SIGNALS)
@@ -182,19 +172,18 @@ def make_item(title, summary, link, source, kind, published, image=None):
     raw = clean(summary, 600)
     if not title or not link:
         return None
-    area = assign_area(title, raw)
+    # area/area_label/area_color/area_glyph are filled in later, in bulk, by
+    # topics.assign_topics() — it's far more efficient to embed everything in
+    # one batch than to embed item-by-item as they stream in from each source.
     return {
         "title": title,
         "summary": summarize(raw, max_sentences=2, max_chars=260),
+        "raw_summary": raw,  # kept only for embedding text; not persisted
         "link": link,
         "source": source,
         "source_kind": kind,
         "published": published.isoformat() if published else None,
         "published_ts": published.timestamp() if published else 0,
-        "area": area["id"],
-        "area_label": area["label"],
-        "area_color": area["color"],
-        "area_glyph": area["glyph"],
         "is_hot": detect_hot(title),
         "orgs": detect_orgs(title, raw),
         "image": image,  # captured now; builder uses it only if hybrid is on
@@ -398,6 +387,7 @@ def dedupe(items):
 
 def main():
     import db
+    import topics
 
     print("Fetching arXiv…")
     items = fetch_arxiv()
@@ -412,10 +402,23 @@ def main():
     items = dedupe(items)
     print(f"After in-run dedupe: {len(items)}")
 
-    # persist into the archive (skips items already seen in prior runs)
     conn = db.connect()
+
+    print("Embedding + classifying topics…")
+    topics.assign_topics(items, conn)  # sets area fields + item["_embedding"]
+    for it in items:
+        it.pop("raw_summary", None)  # was only needed for embedding text
+
+    # persist into the archive (skips items already seen in prior runs)
     added = db.upsert_many(conn, items)
     removed = db.prune(conn)
+
+    print("Backfilling embeddings for legacy/un-embedded general items…")
+    backfilled = topics.backfill_general_embeddings(conn)
+
+    print("Sweeping for emergent topics…")
+    discovered = topics.discover_topics(conn)  # community detection over "general"
+
     st = db.stats(conn)
     conn.close()
 
@@ -431,6 +434,8 @@ def main():
         for x in REPORT["failed"]:
             print("   ", x)
     print(f"\nArchive: +{added} new, -{removed} pruned, {st['total']} total items")
+    print(f"Legacy items backfilled with embeddings: {backfilled}")
+    print(f"New topics discovered this run: {discovered}")
 
 
 if __name__ == "__main__":

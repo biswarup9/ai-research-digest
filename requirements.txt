@@ -3,3 +3,6 @@ feedparser>=6.0
 beautifulsoup4>=4.12
 trafilatura>=1.9
 lxml>=5.2
+sentence-transformers>=3.0
+scikit-learn>=1.4
+numpy>=1.26

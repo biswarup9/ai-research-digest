@@ -51,6 +51,27 @@ def connect():
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_ts ON items(published_ts DESC)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_area ON items(area)")
+
+    # migration: older archives won't have this column yet
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(items)")}
+    if "embedding" not in cols:
+        conn.execute("ALTER TABLE items ADD COLUMN embedding TEXT")
+
+    # dynamic topics discovered by topics.discover_topics(), persisted like
+    # everything else here so they survive and accumulate across runs
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS dynamic_topics (
+            id            TEXT PRIMARY KEY,
+            label         TEXT NOT NULL,
+            keywords      TEXT,
+            color         TEXT,
+            glyph         TEXT,
+            centroid      TEXT NOT NULL,
+            member_count  INTEGER DEFAULT 0,
+            created       TEXT,
+            updated       TEXT
+        )
+    """)
     conn.commit()
     return conn
 
@@ -64,15 +85,18 @@ def upsert_many(conn, items):
         exists = conn.execute("SELECT 1 FROM items WHERE id=?", (iid,)).fetchone()
         if exists:
             continue
+        emb = it.get("_embedding")
         conn.execute("""
             INSERT INTO items (id,title,summary,link,source,source_kind,published,
-                published_ts,area,area_label,area_color,area_glyph,is_hot,orgs,image,first_seen)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                published_ts,area,area_label,area_color,area_glyph,is_hot,orgs,image,
+                embedding,first_seen)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (
             iid, it["title"], it["summary"], it["link"], it["source"],
             it["source_kind"], it["published"], it["published_ts"], it["area"],
             it["area_label"], it["area_color"], it["area_glyph"],
-            1 if it["is_hot"] else 0, json.dumps(it["orgs"]), it.get("image"), now,
+            1 if it["is_hot"] else 0, json.dumps(it["orgs"]), it.get("image"),
+            json.dumps(emb) if emb is not None else None, now,
         ))
         added += 1
     conn.commit()
